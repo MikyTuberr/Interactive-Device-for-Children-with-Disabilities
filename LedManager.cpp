@@ -2,39 +2,42 @@
 #include "Config.h"
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(PIXEL_NUM, PIXEL_PIN, NEO_GRB + NEO_KHZ800);
-uint32_t currentLedColor = 0; 
+
+static uint32_t ledColorBuffer[PIXEL_NUM] = {0};
 
 void initLed() {
   pixels.begin();
   pixels.setBrightness(50);
-  currentLedColor = pixels.Color(0, 0, 0); // Start OFF
-  pixels.setPixelColor(0, currentLedColor);
+  
+  for (uint8_t i = 0; i < PIXEL_NUM; i++) {
+    ledColorBuffer[i] = 0;
+    pixels.setPixelColor(i, 0);
+  }
   pixels.show();
 }
 
-void updateLedState(const Button &b0, const Button &b1) {
-  uint32_t targetColor;
+void updateLedState(Button* btnArray) {
+  bool stateChanged = false;
 
-  if (b0.isPressed && b1.isPressed) {
-    uint8_t mixedR = ((uint16_t)b0.ledR + b1.ledR) > 255 ? 255 : (b0.ledR + b1.ledR);
-    uint8_t mixedG = ((uint16_t)b0.ledG + b1.ledG) > 255 ? 255 : (b0.ledG + b1.ledG);
-    uint8_t mixedB = ((uint16_t)b0.ledB + b1.ledB) > 255 ? 255 : (b0.ledB + b1.ledB);
-    
-    targetColor = pixels.Color(mixedR, mixedG, mixedB);
-  } 
-  else if (b0.isPressed) {
-    targetColor = pixels.Color(b0.ledR, b0.ledG, b0.ledB);
-  } 
-  else if (b1.isPressed) {
-    targetColor = pixels.Color(b1.ledR, b1.ledG, b1.ledB);
-  } 
-  else {
-    targetColor = pixels.Color(0, 0, 0); // Off
+  for (uint8_t i = 0; i < NUM_BUTTONS; i++) {
+    const Button &btn = btnArray[i];
+    uint32_t targetColor;
+
+    if (btn.isPressed) {
+
+      targetColor = pixels.Color(btn.ledR, btn.ledG, btn.ledB);
+    } else {
+      targetColor = pixels.Color(0, 0, 0); // Wyłączona
+    }
+
+    if (ledColorBuffer[btn.ledIndex] != targetColor) {
+      ledColorBuffer[btn.ledIndex] = targetColor;
+      pixels.setPixelColor(btn.ledIndex, targetColor);
+      stateChanged = true;
+    }
   }
 
-  if (currentLedColor != targetColor) {
-    currentLedColor = targetColor;
-    pixels.setPixelColor(0, currentLedColor);
+  if (stateChanged) {
     pixels.show();
   }
 }

@@ -25,11 +25,14 @@ void loop() {
   if (currentTime - lastI2CPollTime >= I2C_POLL_RATE_MS) {
     lastI2CPollTime = currentTime;
 
-    if (Wire.requestFrom(PCF_ADDR, (uint8_t)1) == 1) {
-      uint8_t portState = Wire.read();
+    uint8_t stateExpander = 0xFF;
 
-      processButtons(portState);
-      updateLedState(btn0, btn1);
+    if (Wire.requestFrom(PCF_ADDR, (uint8_t)1) == 1) {
+      stateExpander = Wire.read();
     }
+
+    processButtons(stateExpander);
+    
+    updateLedState(buttons);
   }
 }
